@@ -1,0 +1,23 @@
+Daniel Lee
+daniel.lee@example.com
+
+SUMMARY
+Computer Engineering student interested in network security and defensive security.
+
+EDUCATION
+Example University | 2023-2027
+Bachelor of Science in Computer Engineering
+
+TECHNICAL SKILLS
+Python, Linux, Git, Nmap, Wireshark, Burp Suite
+
+PROJECTS
+
+Network Security Lab
+Analyzed network traffic using Wireshark.
+Performed port and service discovery using Nmap.
+Documented potential security weaknesses in a controlled lab environment.
+
+Web Security Practice
+Used Burp Suite to inspect HTTP requests and responses.
+Studied vulnerability assessment and penetration testing concepts.

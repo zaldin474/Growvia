@@ -1,0 +1,26 @@
+Alex Morgan
+alex.morgan@example.com
+
+SUMMARY
+Computer Engineering student interested in backend software development and scalable web systems.
+
+EDUCATION
+Example University | 2023-2027
+Bachelor of Science in Computer Engineering
+
+TECHNICAL SKILLS
+Python, Java, SQL, Git, MySQL, OOP
+
+PROJECTS
+
+Student Management System
+Developed a Java application for managing students, courses and enrollment.
+Designed relational database tables using SQL and MySQL.
+Used Git for version control.
+
+Library Management Application
+Built a Python application for managing books, users and borrowing records.
+Implemented database operations and object-oriented application logic.
+
+EXPERIENCE
+Academic software development projects involving Java, Python and relational databases.

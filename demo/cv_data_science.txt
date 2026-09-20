@@ -1,0 +1,23 @@
+Sara Wilson
+sara.wilson@example.com
+
+SUMMARY
+Computer Science student interested in data analysis, predictive modelling and machine learning.
+
+EDUCATION
+Example University | 2022-2026
+Bachelor of Science in Computer Science
+
+TECHNICAL SKILLS
+Python, SQL, pandas, NumPy, scikit-learn, Git
+
+PROJECTS
+
+Customer Churn Analysis
+Cleaned customer datasets using pandas and NumPy.
+Explored customer behaviour and trained classification models with scikit-learn.
+Evaluated model performance using validation metrics.
+
+Sales Data Analysis
+Queried structured sales information using SQL.
+Analyzed trends and prepared summaries using Python and pandas.
