@@ -29,6 +29,9 @@ DEFAULT_WEIGHTS = {
     "skills": 0.20
 }
 
+# Number of semantic candidates that will be
+# passed to the slower DeBERTa classifier.
+DEBERTA_SHORTLIST_SIZE = 5
 
 # =========================================================
 # NORMALIZE RELATIVE SCORES
@@ -202,29 +205,70 @@ def recommend_roles_hybrid( cv_text: str,
 
     # -----------------------------------------------------
     # SIGNAL 1:
-    # DeBERTa zero-shot classification
+    # MiniLM semantic similarity
+    #
+    # MiniLM is much faster than DeBERTa.
+    # We use it first to shortlist the most
+    # plausible roles.
     # -----------------------------------------------------
 
-    deberta_results = classify_roles( cv_text,  top_k=len(ROLE_LABELS))
+    embedding_results = calculate_role_similarity(
+        cv_text=cv_text,
+        extracted_skills=candidate_skills,
+        top_k=None
+    )
 
-    deberta_raw = { result["role"]: float(result["score"])
-                    for result in deberta_results}
+    embedding_raw = {
+        result["role"]:
+            float(result["embedding_score"])
+        for result in embedding_results
+    }
+
+
+    # -----------------------------------------------------
+    # DEBERTA SHORTLIST
+    #
+    # Instead of asking DeBERTa to compare the CV
+    # against all 12 roles, only evaluate the roles
+    # MiniLM considers most semantically relevant.
+    # -----------------------------------------------------
+
+    shortlist_size = min(
+        DEBERTA_SHORTLIST_SIZE,
+        len(embedding_results)
+    )
+
+    deberta_candidate_roles = [
+        result["role"]
+        for result
+        in embedding_results[:shortlist_size]
+    ]
+
+    print(
+        f"DeBERTa shortlist "
+        f"({len(deberta_candidate_roles)} roles): "
+        f"{deberta_candidate_roles}",
+        flush=True
+    )
+
 
     # -----------------------------------------------------
     # SIGNAL 2:
-    # Semantic embedding similarity
+    # DeBERTa zero-shot classification
+    # only on the MiniLM shortlist
     # -----------------------------------------------------
 
-    embedding_results = (calculate_role_similarity(
-                                                    cv_text=cv_text,
-                                                    extracted_skills=candidate_skills,
-                                                    top_k=None
-                                                    )
-                         )
+    deberta_results = classify_roles(
+        cv_text,
+        top_k=len(deberta_candidate_roles),
+        candidate_labels=deberta_candidate_roles
+    )
 
-    embedding_raw = {result["role"]: float( result["embedding_score"])
-                     for result in embedding_results}
-
+    deberta_raw = {
+        result["role"]:
+            float(result["score"])
+        for result in deberta_results
+    }
 
     # -----------------------------------------------------
     # Normalize model scores
