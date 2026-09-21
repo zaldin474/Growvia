@@ -4,7 +4,7 @@ import time
 from cv_analysis.step02_profile_extractor import (extract_profile)
 # from cv_analysis.step03_role_classifier import (classify_roles) 
 # replaced with 
-from cv_analysis.hybrid_role_recommender import recommend_roles_hybrid
+from cv_analysis.hybrid_role_recommender import recommend_roles_fast
 
 from cv_analysis.step04_skill_gap_analyzer import ( analyze_skill_gap)
 from cv_analysis.step05_cv_suggester import ( generate_cv_suggestions)
@@ -79,7 +79,7 @@ def run_cv_analysis(
         flush=True
     )
 
-    roles = recommend_roles_hybrid(
+    roles = recommend_roles_fast(
         cv_text,
         top_k=5
     )
