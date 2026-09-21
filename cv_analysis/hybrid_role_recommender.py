@@ -29,6 +29,11 @@ DEFAULT_WEIGHTS = {
     "skills": 0.20
 }
 
+FAST_WEIGHTS = {
+    "embedding": 0.70,
+    "skills": 0.30
+}
+
 # Number of semantic candidates that will be
 # passed to the slower DeBERTa classifier.
 DEBERTA_SHORTLIST_SIZE = 5
@@ -122,6 +127,193 @@ def calculate_skill_evidence( candidate_skills: list[str], role: str) -> dict:
         "required": sorted(required_skills)
     }
 
+
+def recommend_roles_fast( cv_text: str, top_k: int = 5, weights: dict[str, float] | None = None, include_components: bool = False) -> list[dict]:
+
+    if not cv_text or not cv_text.strip():
+        return []
+
+    if weights is None:
+        weights = FAST_WEIGHTS.copy()
+
+    required_weight_names = {
+        "embedding",
+        "skills"
+    }
+
+    if set(weights.keys()) != required_weight_names:
+        raise ValueError(
+            "Fast weights must contain exactly: "
+            "embedding, skills"
+        )
+
+    validated_weights = {}
+
+    for name, value in weights.items():
+
+        if (
+            isinstance(value, bool)
+            or
+            not isinstance(value, (int, float))
+        ):
+            raise ValueError(
+                f"Weight '{name}' must be a number."
+            )
+
+        value = float(value)
+
+        if not math.isfinite(value):
+            raise ValueError(
+                f"Weight '{name}' must be finite."
+            )
+
+        if value < 0:
+            raise ValueError(
+                f"Weight '{name}' cannot be negative."
+            )
+
+        validated_weights[name] = value
+
+    total_weight = sum(
+        validated_weights.values()
+    )
+
+    if total_weight <= 0:
+        raise ValueError(
+            "Total recommendation weight "
+            "must be greater than zero."
+        )
+
+    normalized_weights = {
+        name: value / total_weight
+        for name, value
+        in validated_weights.items()
+    }
+
+    # ---------------------------------
+    # Candidate skills
+    # ---------------------------------
+
+    candidate_skills = extract_skills(
+        cv_text
+    )
+
+    # ---------------------------------
+    # MiniLM semantic similarity
+    # ---------------------------------
+
+    embedding_results = (
+        calculate_role_similarity(
+            cv_text=cv_text,
+            extracted_skills=candidate_skills,
+            top_k=None
+        )
+    )
+
+    embedding_raw = {
+        result["role"]:
+            float(result["embedding_score"])
+        for result in embedding_results
+    }
+
+    embedding_normalized = normalize_scores(
+        embedding_raw
+    )
+
+    # ---------------------------------
+    # Skill evidence
+    # ---------------------------------
+
+    skill_results = {}
+
+    for role in ROLE_LABELS:
+
+        skill_results[role] = (
+            calculate_skill_evidence(
+                candidate_skills,
+                role
+            )
+        )
+
+    # ---------------------------------
+    # Final score
+    # ---------------------------------
+
+    results = []
+
+    for role in ROLE_LABELS:
+
+        embedding_score = (
+            embedding_normalized.get(
+                role,
+                0.0
+            )
+        )
+
+        skill_score = (
+            skill_results[role]["score"]
+        )
+
+        final_score = (
+            normalized_weights["embedding"]
+            * embedding_score
+            +
+            normalized_weights["skills"]
+            * skill_score
+        )
+
+        result = {
+            "role": role,
+            "score": float(final_score)
+        }
+
+        if include_components:
+
+            result.update(
+                {
+                    "embedding_score":
+                        float(
+                            embedding_raw.get(
+                                role,
+                                0.0
+                            )
+                        ),
+
+                    "embedding_normalized":
+                        float(
+                            embedding_score
+                        ),
+
+                    "skill_score":
+                        float(
+                            skill_score
+                        ),
+
+                    "matched_skills":
+                        skill_results[
+                            role
+                        ]["matched"]
+                }
+            )
+
+        results.append(
+            result
+        )
+
+    results.sort(
+        key=lambda item: item["score"],
+        reverse=True
+    )
+
+    top_k = max(
+        1,
+        min(
+            top_k,
+            len(results)
+        )
+    )
+
+    return results[:top_k]
 
 # =========================================================
 # HYBRID RECOMMENDATION
