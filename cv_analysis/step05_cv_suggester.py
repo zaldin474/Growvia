@@ -247,10 +247,7 @@ Requirements:
 
     try:
 
-     generated = generate_text(
-        prompt,
-        max_new_tokens=140
-    )
+     generated = generate_text( prompt, max_new_tokens=110)
 
     except Exception:
 

@@ -1,5 +1,5 @@
 import re
-
+import time
 import torch
 
 from transformers import (
@@ -50,9 +50,7 @@ def get_text_generator():
     )
 
 
-def clean_generated_text(
-    text: str
-) -> str:
+def clean_generated_text(  text: str) -> str:
 
     if not text:
         return ""
@@ -74,14 +72,9 @@ def clean_generated_text(
     return text.strip()
 
 
-def generate_text(
-    prompt: str,
-    max_new_tokens: int = 160
-) -> str:
+def generate_text( prompt: str,max_new_tokens: int = 160) -> str:
 
-    tokenizer, model = (
-        get_text_generator()
-    )
+    tokenizer, model = (  get_text_generator())
 
     inputs = tokenizer(
         prompt,
@@ -90,33 +83,40 @@ def generate_text(
         max_length=512
     )
 
+    generation_start = time.time()
+
+    print(
+    f"Starting FLAN generation "
+    f"(max_new_tokens={max_new_tokens})...",
+    flush=True
+    )
+
     with torch.inference_mode():
 
-        output_ids = model.generate(
-            **inputs,
-            max_new_tokens=max_new_tokens,
-            do_sample=False,
-            num_beams=4,
-            repetition_penalty=1.15,
-            no_repeat_ngram_size=3,
-            early_stopping=True
-        )
+        output_ids = model.generate(**inputs,
+                                max_new_tokens=max_new_tokens,
 
-    text = tokenizer.decode(
-        output_ids[0],
-        skip_special_tokens=True
-    )
+                                # Greedy decoding.
+                                # Much cheaper than beam search on CPU.
+                                do_sample=False,
+                                num_beams=1,
 
-    return clean_generated_text(
-        text
-    )
+                                repetition_penalty=1.15,
+                                no_repeat_ngram_size=3,
+
+                                # Prevent one generation from holding
+                                # the HTTP request for too long.
+                                max_time=30.0
+                            )
+
+    print( f"FLAN generation finished in " f"{time.time() - generation_start:.2f}s", flush=True)
+
+    text = tokenizer.decode(  output_ids[0], skip_special_tokens=True)
+
+    return clean_generated_text( text)
 
 
-def is_bad_generation(
-    text: str,
-    minimum_words: int = 12,
-    forbidden_phrases: list[str] | None = None
-) -> bool:
+def is_bad_generation( text: str, minimum_words: int = 12, forbidden_phrases: list[str] | None = None) -> bool:
 
     if not text:
         return True
